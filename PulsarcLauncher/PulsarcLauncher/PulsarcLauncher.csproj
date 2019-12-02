@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>PulsarcLauncher</RootNamespace>
+    <PackageVersion>1.0</PackageVersion>
+    <Title>PulsarcLauncher</Title>
+    <Copyright>Copyright © 2019</Copyright>
+    <Description>Description of PulsarcLauncher</Description>
+  </PropertyGroup>
+	
+  <ItemGroup>
+    <None Remove="assets\icon.png" />
+    <None Remove="assets\logo.png" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <EmbeddedResource Include="assets\logo.png" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <EmbeddedResource Include="assets\icon.png" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Eto.Forms" Version="2.4.1" />
+    <PackageReference Include="squirrel.windows" Version="1.9.1" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Update="PulsarcLauncherForm.eto.cs">
+      <DependentUpon>PulsarcLauncherForm.cs</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Folder Include="Commands\" />
+  </ItemGroup>
+  
+</Project>
