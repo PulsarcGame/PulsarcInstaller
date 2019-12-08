@@ -32,10 +32,4 @@
     <PackageReference Include="Eto.Forms" Version="2.4.1" />
   </ItemGroup>
   
-  <ItemGroup>
-    <Compile Update="PulsarcLauncherForm.eto.cs">
-      <DependentUpon>PulsarcLauncherForm.cs</DependentUpon>
-    </Compile>
-  </ItemGroup>
-  
 </Project>
