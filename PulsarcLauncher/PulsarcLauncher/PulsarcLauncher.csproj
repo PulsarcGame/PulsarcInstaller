@@ -10,6 +10,12 @@
   </PropertyGroup>
 	
   <ItemGroup>
+    <Compile Remove="Commands\**" />
+    <EmbeddedResource Remove="Commands\**" />
+    <None Remove="Commands\**" />
+  </ItemGroup>
+	
+  <ItemGroup>
     <None Remove="assets\icon.png" />
     <None Remove="assets\logo.png" />
   </ItemGroup>
@@ -24,17 +30,12 @@
   
   <ItemGroup>
     <PackageReference Include="Eto.Forms" Version="2.4.1" />
-    <PackageReference Include="squirrel.windows" Version="1.9.1" />
   </ItemGroup>
   
   <ItemGroup>
     <Compile Update="PulsarcLauncherForm.eto.cs">
       <DependentUpon>PulsarcLauncherForm.cs</DependentUpon>
     </Compile>
-  </ItemGroup>
-  
-  <ItemGroup>
-    <Folder Include="Commands\" />
   </ItemGroup>
   
 </Project>

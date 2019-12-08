@@ -1,102 +1,74 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
-using System.Diagnostics;
+using System.Reflection;
 
 namespace PulsarcLauncher.Util
 {
     public static class Updater
     {
+        // Windows
         public static bool IsOnWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
         public static bool Is64Bit => Environment.Is64BitProcess;
+
         // %appdata% folder
-        private const string DEFAULT_WINDOWS_FOLDER_NAME = ".pulsarc";
+        private const string DEFAULT_WINDOWS_FOLDER_NAME = ".Pulsarc";
         private static readonly string DefaultWindowsInstallPath =
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData).Replace('\\', '/')
             + '/' + DEFAULT_WINDOWS_FOLDER_NAME;
 
+        // Mac / OSX
         public static bool IsOnMac => RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+        
+        // TODO
         private const string DEFAULT_MAC_FOLDER_NAME = "Pulsarc";
-        private static string DefaultMacInstallPath = "" + '/' + DEFAULT_MAC_FOLDER_NAME; // TODO
+        private static string DefaultMacInstallPath = "" + '/' + DEFAULT_MAC_FOLDER_NAME;
 
+        // Linux
         public static bool IsOnLinux => RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+        
+        // TODO
         private const string DEFAULT_LINUX_FOLDER_NAME = "Pulsarc";
-        private static string DefaultLinuxInstallPath = "" + '/' + DEFAULT_LINUX_FOLDER_NAME; // TODO
+        private static string DefaultLinuxInstallPath = "" + '/' + DEFAULT_LINUX_FOLDER_NAME;
 
         // The default directory 
         public static string DefaultInstallPath => IsOnWindows ? DefaultWindowsInstallPath : "";
         public static string DefaultFolderName => IsOnWindows ? DEFAULT_WINDOWS_FOLDER_NAME : "Pulsarc";
 
-        // Default Temp Folder directory
-        // GetTempPath should work on Mac and Linux as well.
-        public static string DefaultTempPath => Path.GetTempPath().Replace('\\', '/') + "Pulsarc/";
-        public static string DefaultTempFile => "PulsarcLauncher.txt";
-
-        public static void CheckForAndExecuteNewInstall()
+        /// <summary>
+        /// Determine whether or not the Pulsarc Directory Exists.
+        /// </summary>
+        /// <returns>True if Pulsarc has been installed and there is a directory.
+        /// or False if it can't be found.</returns>
+        public static bool PulsarcDirectoryExists()
         {
-            if (CanFindPulsarcDirectory())
-                return;
+            string assemblyPath = GetPathToAssembly();
 
-            InstallTimer();
-        }
-
-        private static bool CanFindPulsarcDirectory()
-        {
-            string filePath = $"{DefaultTempPath}{DefaultTempFile}"; ;
-
-            // If no temp file exists we can't know where the install directory is.
-            if (!File.Exists(filePath))
+            // If the path we're in has only one or two "/" it means we're definitely not in the Pulsarc directory.
+            // We're in "[X]:/.../Pulsarc/[.dllFolder], at least 3 "/"
+            if (assemblyPath.Count(c => c == '/') <= 2)
                 return false;
 
-            // Read the first line
-            string firstLine = "";
-            using (var reader = new StreamReader(filePath)) { firstLine = reader.ReadLine(); }
+            // If we don't see Pulsarc.exe in the folder above us, we're probably not in the right place.
+            int indexOfLastSlash = assemblyPath.LastIndexOf('/');
+            string rootAppFolder = assemblyPath.Substring(0, indexOfLastSlash);
 
-            // First line should be "Dir: {InstallDirectory}"
-            if (firstLine.Substring(0, 5) != "Dir: ")
-                return false;
-
-            // Get InstallPath
-            string installPath = firstLine.Substring(5);
-
-            // If the directory in the Temp file doesn't exist, install a new one.
-            if (!Directory.Exists(installPath))
-                return false;
-
-            return true;
+            return File.Exists($"{rootAppFolder}/Pulsarc.exe");
         }
 
-        private static Task InstallTimer()
+        /// <summary>
+        /// Get the path to the currently executing assembly (.dll) file.
+        /// </summary>
+        /// <returns></returns>
+        private static string GetPathToAssembly()
         {
-            bool installing = false;
-            string installPath = DefaultInstallPath;
-            Stopwatch timer = new Stopwatch();
-            timer.Start();
-
-            int lastTimeRemaining = 6;
-
-            return Task.Factory.StartNew(async () =>
-            {
-                while (!installing)
-                {
-                    int timeRemaining = 5 - (int)Math.Floor(timer.ElapsedMilliseconds / 1000d);
-
-                    if (timeRemaining != lastTimeRemaining)
-                    {
-                        lastTimeRemaining = timeRemaining;
-                        PulsarcLauncherForm.ChangeText($"Installing to {installPath} in {timeRemaining} seconds.");
-                    }
-
-                    installing = timeRemaining <= 0;
-                }
-            });
+            return Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)
+                // Change windows "\" to "/" for easier usage.
+                .Replace("\\", "/");
         }
 
-        public static void CheckForAndExecuteNewUpdate()
+        public static void UpdateIfNeeded()
         {
 
         }
