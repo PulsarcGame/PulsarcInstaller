@@ -10,30 +10,34 @@ namespace PulsarcLauncher
     public class PulsarcLauncherForm : Form
     {
         // The label that gives information about installing/updating/launching to the user.
-        private Label StatusLabel;
+        private Label statusLabel = new Label()
+        {
+            Text = "Checking for updates...",
+            TextAlignment = TextAlignment.Center,
+        };
 
-        private Stopwatch InstallTimer = new Stopwatch();
+        private Stopwatch installTimer = new Stopwatch();
 
-        // Keeps track of the InstallTimer, will also start and stop it automatically.
+        // Keeps track of the installTimer, will also start and stop it automatically.
+        // If you set this to true, the installTimer will restart.
+        // If you set this to false, the installerTimer will stop.
         private bool InstallTimerActive
         {
-            get => InstallTimer.IsRunning;
+            get => installTimer.IsRunning;
             set
             {
                 // Prevent extra Restart and Stop calls
-                if (value == InstallTimer.IsRunning)
+                if (value == installTimer.IsRunning)
                     return;
 
-                // If true, restart the timer
                 if (value)
-                    InstallTimer.Restart();
-                // If false, stop the timer
+                    installTimer.Restart();
                 else
-                    InstallTimer.Stop();
+                    installTimer.Stop();
             }
         }
 
-        private string InstallPath = Updater.DefaultInstallPath;
+        private string installPath = Updater.DefaultInstallPath;
 
         public PulsarcLauncherForm()
         {
@@ -73,12 +77,6 @@ namespace PulsarcLauncher
         /// </summary>
         private void SetUpContent()
         {
-            StatusLabel = new Label()
-            {
-                Text = "Checking for updates...",
-                TextAlignment = TextAlignment.Center,
-            };
-
             // Place the logo and text into our window.
             Content = new TableLayout
             {
@@ -87,7 +85,7 @@ namespace PulsarcLauncher
                     // Logo
                     Bitmap.FromResource(Assets.Logo),
                     // Status Text
-                    StatusLabel,
+                    statusLabel,
                     // TODO: Version selector? Force launch/Force update? Button to Pulsarc folder directory?
                 },
 
@@ -117,7 +115,7 @@ namespace PulsarcLauncher
         {
             base.OnMouseDoubleClick(e);
 
-            // Open Folder Dialogue if the timer is active
+            // Open Folder Select Dialog if the timer is active
             if (InstallTimerActive)
                 ChooseInstallLocation();
         }
@@ -126,20 +124,25 @@ namespace PulsarcLauncher
         #region Installation Methods
         private void ChooseInstallLocation()
         {
+            // Stop timer
             InstallTimerActive = false;
 
+            // Bring up dialog
             SelectFolderDialog selectFolder = new SelectFolderDialog();
             selectFolder.ShowDialog(this);
 
+            // Use the selected directory as the new install path.
             // If the user cancelled out of the dialog, we get an error here,
             // in that case just catch it and continue.
-            try { InstallPath = selectFolder.Directory; } catch { }
+            try { installPath = selectFolder.Directory; } catch { }
 
+            // Reset timer and countdown again.
             InstallTimerActive = true;
         }
 
         /// <summary>
         /// Starts a timer that counts down from 10 seconds before installation.
+        /// This gives the user a few seconds to decide a new install location.
         /// Uses async to update the UI and let the user know the time left.
         /// Similar to osu's installation method.
         /// </summary>
@@ -148,6 +151,7 @@ namespace PulsarcLauncher
             Task InstallTimer = new Task(RunInstallTimer);
             InstallTimer.Start();
             
+            // Wait for the timer to finish before installing Pulsarc
             await InstallTimer;
             Updater.Install();
         }
@@ -157,19 +161,21 @@ namespace PulsarcLauncher
         /// </summary>
         private void RunInstallTimer()
         {
+            // Start timer
             InstallTimerActive = true;
 
             // Total length (in seconds) the timer should elapse for.
-            int totalTime = 10;
-            // Keeps track of the last second that's passed on the timer.
-            int lastTimeRemaining = totalTime + 1;
+            const int TOTAL_TIME = 10;
+
+            // Keep track of the previous second on the timer.
+            int lastTimeRemaining = TOTAL_TIME + 1;
 
             while (true)
             {
                 // Find remaining time by subtracting the current time passed (rounded down)
                 // from the total time.
-                int timeRemaining = totalTime
-                    - (int)Math.Floor(InstallTimer.ElapsedMilliseconds / 1000d);
+                int timeRemaining = TOTAL_TIME
+                    - (int)Math.Floor(installTimer.ElapsedMilliseconds / 1000d);
 
                 // If a new second has passed
                 if (timeRemaining != lastTimeRemaining)
@@ -179,18 +185,18 @@ namespace PulsarcLauncher
                     // Protection against Grammar Nazis
                     string plural = timeRemaining != 1 ? "s" : "";
 
-                    // Create an action that changes the text to match timer.
+                    // Create an action that changes the text to match timer...
                     Action lowerTimer = () =>
-                        StatusLabel.Text = $"Pulsarc will install at" +
-                        $"\n{InstallPath}" +
+                        statusLabel.Text = $"Pulsarc will install at" +
+                        $"\n{installPath}" +
                         $"\nin {timeRemaining} second{plural}." +
                         $"\nDouble click to change the install location.";
 
-                    // And invoke it since we aren't on the same thread as the UI.
+                    // ...And invoke the action since we aren't on the same thread as the UI.
                     Assets.Application.Invoke(lowerTimer);
                 }
 
-                // Stop the timer once we're below zero
+                // Stop the timer once we're at or below zero
                 if (timeRemaining <= 0)
                 {
                     InstallTimerActive = false;
