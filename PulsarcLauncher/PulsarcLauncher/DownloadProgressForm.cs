@@ -11,6 +11,7 @@ namespace PulsarcLauncher
 {
     public class DownloadProgressForm : Form
     {
+        // Used to download data from server
         private WebClient webClient;
 
         private BackgroundWorker bgWorker;
@@ -38,28 +39,15 @@ namespace PulsarcLauncher
         {
             InitializeComponent();
 
+            // Create a temp path
             TempFilePath = Path.GetTempFileName();
 
             this.md5 = md5;
 
-            webClient = new WebClient();
-            webClient.DownloadProgressChanged += new DownloadProgressChangedEventHandler(DownloadProgressChanged);
-            webClient.DownloadFileCompleted += new AsyncCompletedEventHandler(DownloadFileCompleted);
+            SetUpClientAndWorker();
 
-            bgWorker = new BackgroundWorker();
-            bgWorker.DoWork += new DoWorkEventHandler(DoWork);
-            bgWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(RunWorkerCompleted);
-
-            bgWorker = new BackgroundWorker();
-
-            try
-            {
-                webClient.DownloadFileAsync(location, TempFilePath);
-            }
-            catch
-            {
-                CloseWithDialog(DialogResult.No);
-            }
+            try { webClient.DownloadFileAsync(location, TempFilePath); }
+            catch { CloseWithDialog(DialogResult.No); }
         }
 
         #region Init Methods
@@ -115,6 +103,17 @@ namespace PulsarcLauncher
                 BackgroundColor = new Color(94 / 255f, 94 / 255f, 94 / 255f),
             };
         }
+
+        private void SetUpClientAndWorker()
+        {
+            webClient = new WebClient();
+            webClient.DownloadProgressChanged += new DownloadProgressChangedEventHandler(WC_DownloadProgressChanged);
+            webClient.DownloadFileCompleted += new AsyncCompletedEventHandler(WC_DownloadFileCompleted);
+
+            bgWorker = new BackgroundWorker();
+            bgWorker.DoWork += new DoWorkEventHandler(BW_DoWork);
+            bgWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(BW_RunWorkerCompleted);
+        }
         #endregion
 
         protected override void OnClosed(EventArgs e)
@@ -123,29 +122,27 @@ namespace PulsarcLauncher
 
             bool triggeredDialog = false;
 
+            // Stop webClient if it's busy
             if (webClient.IsBusy)
             {
                 webClient.CancelAsync();
                 triggeredDialog = true;
             }
+
+            // Stop bgWorker if it's busy
             if (bgWorker.IsBusy)
             {
                 bgWorker.CancelAsync();
                 triggeredDialog = true;
             }
 
+            // Close with an Abort result
             if (triggeredDialog)
-            {
-                Dialog<DialogResult> dialog = new Dialog<DialogResult>()
-                {
-                    Result = DialogResult.Abort,
-                };
-                dialog.ShowModal();
-            }
+                CloseWithDialog(DialogResult.Abort);
         }
 
         #region WebClient and BackgroundWorker methods
-        private void DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e)
+        private void WC_DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e)
         {
             // Update progress bar
             downloadProgress.Value = e.ProgressPercentage;
@@ -158,13 +155,13 @@ namespace PulsarcLauncher
             // Formats bytes to be more readable.
             // i.e., we're downloading 3000 bytes, the format will change from "x B / 3000 b" to
             // "x KB / 2.92 KB"
-            string FormatBytes(long bytes, int decimalPlaces = 2)
+            string FormatBytes(in long bytes, int decimalPlaces = 2)
             {
                 double byteAmount = bytes;
                 string formatString = "{0";
                 string byteType = "B";
 
-                // Change from B amount to KB, MB, or GB amount
+                // Convert from B to KB, MB, or GB
                 while (byteAmount > 1024 && byteType != "GB")
                     UpgradeType(ref byteAmount, ref byteType);
 
@@ -181,27 +178,25 @@ namespace PulsarcLauncher
                 // As needed
                 void UpgradeType(ref double amount, ref string currentByteType)
                 {
-                    if (amount > 1024 && currentByteType != "GB")
+                    amount /= 1024;
+
+                    switch (currentByteType)
                     {
-                        amount /= 1024;
-                        switch (currentByteType)
-                        {
-                            case "B":
-                                currentByteType = "KB";
-                                break;
-                            case "KB":
-                                currentByteType = "MB";
-                                break;
-                            case "MB":
-                                currentByteType = "GB";
-                                break;
-                        }
+                        case "B":
+                            currentByteType = "KB";
+                            break;
+                        case "KB":
+                            currentByteType = "MB";
+                            break;
+                        case "MB":
+                            currentByteType = "GB";
+                            break;
                     }
                 }
             }
         }
 
-        private void DownloadFileCompleted(object sender, AsyncCompletedEventArgs e)
+        private void WC_DownloadFileCompleted(object sender, AsyncCompletedEventArgs e)
         {
             if (e.Error != null)
                 CloseWithDialog(DialogResult.No);
@@ -214,8 +209,9 @@ namespace PulsarcLauncher
             }
         }
 
-        private void DoWork(object sender, DoWorkEventArgs e)
+        private void BW_DoWork(object sender, DoWorkEventArgs e)
         {
+            // These arguments were given in WC_DownloadFileCompleted()
             string file = ((string[])e.Argument)[0];
             string updateMD5 = ((string[])e.Argument)[1];
 
@@ -225,22 +221,26 @@ namespace PulsarcLauncher
                 e.Result = DialogResult.Ok;
         }
 
-        private void RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        /// <summary>
+        /// When everything is done, close with the DialogResult received from the work
+        /// </summary>
+        private void BW_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             CloseWithDialog((DialogResult)e.Result);
         }
         #endregion
 
-        // Not sure if this catch block is the correct Eto.Forms implementation of
-        // The Window Form Code: 
-        // DialogueResult = DialogResult.[]; Close();
+        // Not sure how to set the DialogResult for this form using Eto,
+        // Pretty sure this just pops up a dialog window with the DialogResult provided
+        // And then closes the whole thing when it's done, but haven't tested yet.
+        // TODO?: Turn this class from a "Form" into a "Dialog" instead?
         private void CloseWithDialog(DialogResult result)
         {
             Dialog<DialogResult> dialog = new Dialog<DialogResult>()
-            {
-                Result = result,
-            };
-            dialog.ShowModal();
+                { Result = result, };
+
+            dialog.ShowModal(this);
+            dialog.Close(result);
 
             Close();
         }

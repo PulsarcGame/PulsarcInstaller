@@ -37,12 +37,12 @@ namespace PulsarcLauncher
             }
         }
 
-        private string installPath = Updater.DefaultInstallPath;
+        private string installPath = ComputerInfo.DefaultInstallPath;
 
-        public PulsarcLauncherForm()
-        {
-            InitializeComponent();
-        }
+        /// <summary>
+        /// Create a new PulsarcLauncherForm
+        /// </summary>
+        public PulsarcLauncherForm() => InitializeComponent();
 
         #region Init Methods
         private void InitializeComponent()
@@ -92,7 +92,7 @@ namespace PulsarcLauncher
                 Padding = new Padding(5),
                 Spacing = new Size(30, 30),
 
-                // TODO: Test the colors on other computers/platforms
+                // TODO: Test the colors on other monitors/operating systems
                 BackgroundColor = new Color(94 / 255f, 94 / 255f, 94 / 255f),
             };
         }
@@ -105,10 +105,10 @@ namespace PulsarcLauncher
 
             // ... TODO?: Check for launcher updates ...
 
-            if (!Updater.PulsarcDirectoryExists())
+            if (!ComputerInfo.PulsarcDirectoryExists())
                 StartInstallTimer();
             else
-                Updater.UpdateIfNeeded();
+                ComputerInfo.UpdateIfNeeded();
         }
 
         protected override void OnMouseDoubleClick(MouseEventArgs e)
@@ -153,7 +153,7 @@ namespace PulsarcLauncher
             
             // Wait for the timer to finish before installing Pulsarc
             await InstallTimer;
-            Updater.Install();
+            ComputerInfo.Install();
         }
 
         /// <summary>
