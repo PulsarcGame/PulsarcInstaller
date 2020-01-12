@@ -1,2 +1,2 @@
 # PulsarcLauncher
-A cross-platform launcher that installs and updates Pulsarc.
+A cross-platform Installer that installs Pulsarc.
