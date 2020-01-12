@@ -105,7 +105,7 @@ namespace PulsarcLauncher
 
             // ... TODO?: Check for launcher updates ...
 
-            if (!ComputerInfo.PulsarcDirectoryExists())
+            if (!ComputerInfo.PulsarcAlreadyInstalled())
                 StartInstallTimer();
             else
                 ComputerInfo.UpdateIfNeeded();

@@ -50,18 +50,20 @@ namespace PulsarcLauncher.Util
         /// </summary>
         /// <returns>True if Pulsarc has been installed and there is a directory.
         /// or False if it can't be found.</returns>
-        public static bool PulsarcDirectoryExists()
+        public static bool PulsarcAlreadyInstalled()
         {
             string assemblyPath = GetPathToAssembly();
 
-            // If the path we're in has only one or two "/" it means we're definitely not in the Pulsarc directory.
+            // If the path we're in has only one or two "/" it means we're defintely
+            // not in the Pulsarc directory.
             // Windows: "[X]:/.../Pulsarc/[.dllFolder]
             // Mac: "/.../Pulsarc/[.dllFolder]
             // Linux: TOFO (To figure out)
             if (assemblyPath.Count(c => c == '/') <= 2)
                 return false;
 
-            // If we don't see the Pulsarc executable in the folder above us, we're probably not in the right place.
+            // If we don't see the Pulsarc executable in the folder above this
+            // dll, we probably don't have it installed.
             int indexOfLastSlash = assemblyPath.LastIndexOf('/');
             string rootAppFolder = assemblyPath.Substring(0, indexOfLastSlash);
 

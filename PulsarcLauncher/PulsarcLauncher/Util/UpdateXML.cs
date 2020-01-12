@@ -29,9 +29,9 @@ namespace PulsarcLauncher.Util
         /// for determining what patch downloads to grab.</param>
         /// <param name="fullDownload">The link to the full download of this version. Mostly used
         /// by the installer portion. </param>
-        /// <param name="patchDownload">The linke to a "Delta" package that contains only the changed files
-        /// from the update previous.</param>
-        /// <param name="md5">Used to checksum data integrrity.</param>
+        /// <param name="patchDownload">The link to a "Delta" package that contains only the changed files
+        /// since the previous version.</param>
+        /// <param name="md5">Used to checksum data integrity.</param>
         /// <param name="changelog">A link to Pulsarc/CHANGELOG.md, or string containing the changes in this update.</param>
         /// <param name="mandatory">If this is true this update will install without user permission.
         /// Used in case of a security patch, a major update to Server-Client communication, etc.</param>
@@ -105,7 +105,7 @@ namespace PulsarcLauncher.Util
         /// Null if there's an error or issue during parsing.</returns>
         public static UpdateXML Parse(Uri location)
         {
-            Version version, lastVersion;
+            Version version, previousVersion;
             string fullURL, patchURL, md5, changelog;
             bool mandatory;
 
@@ -122,7 +122,7 @@ namespace PulsarcLauncher.Util
 
                 // Get all the data from the root node
                 version = Version.Parse(node["version"].InnerText);
-                lastVersion = Version.Parse(node["lastVersion"].InnerText);
+                previousVersion = Version.Parse(node["previousVersion"].InnerText);
 
                 fullURL = node["fullurl"].InnerText;
                 patchURL = node["patchurl"].InnerText;
@@ -132,7 +132,7 @@ namespace PulsarcLauncher.Util
                 mandatory = bool.Parse(node["mandatory"].InnerText);
 
                 // Use that data to make and return a new UpdateXML
-                return new UpdateXML(version, lastVersion, new Uri(fullURL), new Uri(patchURL),
+                return new UpdateXML(version, previousVersion, new Uri(fullURL), new Uri(patchURL),
                     md5, changelog, mandatory);
             }
             catch
