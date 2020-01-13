@@ -1,9 +1,6 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<item>
+<install appId="Pulsarc">
   <version>x.x.x.0</version>
-  <previousVersion>x.x.x.0</previousVersion>
-  <fullurl>https://github.com/PulsarcGame/Pulsarc/releases/download/...</fullurl>
-  <patchurl>https://github.com/PulsarcGame/Pulsarc/releases/download/...</patchurl>
-  <changelog>https://github.com/PulsarcGame/Pulsarc/blob/master/CHANGELOG.md</changelog>
-  <mandatory>false</mandatory>
-</item>
+  <download>https://github.com/PulsarcGame/Pulsarc/releases/download/...</download>
+  <md5></md5>
+</install>

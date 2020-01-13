@@ -12,74 +12,79 @@ namespace PulsarcInstaller.Util
         public static bool IsOnWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
         public static bool Is64Bit => Environment.Is64BitProcess;
 
+        private const string WINDOWS_FILE_EXTENSION = ".exe";
+
         // %appdata% folder
         private const string DEFAULT_WINDOWS_FOLDER_NAME = ".Pulsarc";
         private static readonly string DefaultWindowsInstallPath =
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData).Replace('\\', '/')
             + '/' + DEFAULT_WINDOWS_FOLDER_NAME;
 
-        // File extensions
-        private const string WINDOWS_FILE_EXTENSION = ".exe";
-
         // Mac / OSX
         public static bool IsOnMac => RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
-        
+        private const string MAC_FILE_EXTENSION = "";
+
         // TODO
         private const string DEFAULT_MAC_FOLDER_NAME = "Pulsarc";
-        private static string DefaultMacInstallPath = "" + '/' + DEFAULT_MAC_FOLDER_NAME;
-        private const string MAC_FILE_EXTENSION = "";
+        private static string DefaultMacInstallPath = "TODO" + '/' + DEFAULT_MAC_FOLDER_NAME;
 
         // Linux
         public static bool IsOnLinux => RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
-        
+
         // TODO
         private const string DEFAULT_LINUX_FOLDER_NAME = "Pulsarc";
-        private static string DefaultLinuxInstallPath = "" + '/' + DEFAULT_LINUX_FOLDER_NAME;
-        private const string LINUX_FILE_EXTENSION = "";
+        private static string DefaultLinuxInstallPath = "TODO" + '/' + DEFAULT_LINUX_FOLDER_NAME;
+        private const string LINUX_FILE_EXTENSION = "TODO";
 
         // The default directory
-        // TODO: Add Mac/Linux details.
-        public static string DefaultInstallPath => IsOnWindows ? DefaultWindowsInstallPath : "";
-        public static string DefaultFolderName => IsOnWindows ? DEFAULT_WINDOWS_FOLDER_NAME : "Pulsarc";
-        public static string ExecutableExtension => IsOnWindows ? WINDOWS_FILE_EXTENSION : "";
+        public static string DefaultFolderName =>   IsOnWindows ? DEFAULT_WINDOWS_FOLDER_NAME
+                                                  : IsOnMac ? DEFAULT_MAC_FOLDER_NAME
+                                                  : IsOnLinux ? DefaultLinuxInstallPath
+                                                  : throw new Exception("Invalid Platform");
+
+        public static string DefaultInstallPath =>  IsOnWindows ? DefaultWindowsInstallPath
+                                                  : IsOnMac ? DefaultMacInstallPath
+                                                  : IsOnLinux ? DefaultLinuxInstallPath
+                                                  : throw new Exception("Invalid Platform");
+
+        public static string ExecutableExtension => IsOnWindows ? WINDOWS_FILE_EXTENSION
+                                                  : IsOnMac ? MAC_FILE_EXTENSION
+                                                  : IsOnLinux ? LINUX_FILE_EXTENSION
+                                                  : throw new Exception("Invalid Platform");
 
         /// <summary>
-        /// Searches the provided directory for a Pulsac executable, if it can't find it,
-        /// assume Pulsarc is not installed in the provided path.
+        /// Sees if a Pulsarc executable is in the path provided.
         /// </summary>
-        /// <param name="path">The path to search for.</param>
-        /// <returns>True if a Pulsarc executable is the provided path. False if otherwise.</returns>
-        public static bool PulsarcExistsIn(string path)
+        /// <param name="pathToCheck">The path to check for Pulsarc.</param>
+        /// <returns></returns>
+        public static bool PulsarcDirectoryExistsIn(string pathToCheck)
         {
-            return File.Exists($"{path}/Pulsarc{ExecutableExtension}");
+            return File.Exists($"{pathToCheck}/Pulsarc{ExecutableExtension}");
         }
 
         /// <summary>
-        /// Might be outdated.
         /// Determine whether or not the Pulsarc Directory Exists.
         /// This method assumes the Launcher/Installer executable is in the same location
         /// as the Pulsarc executable.
         /// </summary>
         /// <returns>True if Pulsarc has been installed and there is a directory.
         /// or False if it can't be found.</returns>
-        public static bool PulsarcAlreadyInstalled()
+        public static bool PulsarcDirectoryExists()
         {
             string assemblyPath = GetPathToAssembly();
 
-            // If the path we're in has only one or two "/" it means we're defintely
-            // not in the Pulsarc directory.
+            // If the path we're in has only one or two "/" it means we're definitely not in the Pulsarc directory.
             // Windows: "[X]:/.../Pulsarc/[.dllFolder]
             // Mac: "/.../Pulsarc/[.dllFolder]
             // Linux: TOFO (To figure out)
             if (assemblyPath.Count(c => c == '/') <= 2)
                 return false;
 
-            // If we don't see the Pulsarc executable in the folder above this
-            // dll, we probably don't have it installed.
+            // If we don't see the Pulsarc executable in the folder above us, we're probably not in the right place.
             int indexOfLastSlash = assemblyPath.LastIndexOf('/');
             string rootAppFolder = assemblyPath.Substring(0, indexOfLastSlash);
 
-            return PulsarcExistsIn(rootAppFolder);
+            return PulsarcDirectoryExistsIn(rootAppFolder);
         }
 
         /// <summary>

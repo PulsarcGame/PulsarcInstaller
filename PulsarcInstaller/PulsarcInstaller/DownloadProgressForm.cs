@@ -11,6 +11,8 @@ namespace PulsarcInstaller
 {
     public class DownloadProgressForm : Form
     {
+        private DialogResult result = DialogResult.None;
+
         // Used to download data from server
         private WebClient webClient;
 
@@ -35,7 +37,7 @@ namespace PulsarcInstaller
             TextAlignment = TextAlignment.Center,
         };
 
-        public DownloadProgressForm(Uri location, string md5, bool install)
+        public DownloadProgressForm(Uri location, string md5)
         {
             InitializeComponent();
 
@@ -48,6 +50,15 @@ namespace PulsarcInstaller
 
             try { webClient.DownloadFileAsync(location, TempFilePath); }
             catch { CloseWithDialog(DialogResult.No); }
+        }
+
+        public new DialogResult Show()
+        {
+            base.Show();
+
+            // ...
+
+            return result;
         }
 
         #region Init Methods

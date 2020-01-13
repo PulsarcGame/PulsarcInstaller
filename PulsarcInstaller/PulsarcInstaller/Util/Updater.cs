@@ -5,6 +5,7 @@ using System.Text;
 
 namespace PulsarcLauncher.Util
 {
+    [Obsolete("This project is now for installing pulsarc, not installing & updating.")]
     class Updater
     {
         private BackgroundWorker bgWorker;
