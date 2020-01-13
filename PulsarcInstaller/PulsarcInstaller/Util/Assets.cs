@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace PulsarcLauncher.Util
+namespace PulsarcInstaller.Util
 {
     public static class Assets
     {

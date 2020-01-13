@@ -2,7 +2,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace PulsarcLauncher.Util
+namespace PulsarcInstaller.Util
 {
     public enum HashType
     {

@@ -2,11 +2,11 @@
 	
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <RootNamespace>PulsarcLauncher</RootNamespace>
+    <RootNamespace>PulsarcInstaller</RootNamespace>
     <PackageVersion>1.0</PackageVersion>
-    <Title>PulsarcLauncher</Title>
+    <Title>PulsarcInstaller</Title>
     <Copyright>Copyright © 2019</Copyright>
-    <Description>Description of PulsarcLauncher</Description>
+    <Description>Description of PulsarcInstaller</Description>
   </PropertyGroup>
 	
   <ItemGroup>

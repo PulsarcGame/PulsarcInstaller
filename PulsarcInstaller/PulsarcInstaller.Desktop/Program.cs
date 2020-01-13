@@ -1,14 +1,14 @@
 ﻿using System;
-using PulsarcLauncher.Util;
+using PulsarcInstaller.Util;
 
-namespace PulsarcLauncher.Desktop
+namespace PulsarcInstaller.Desktop
 {
     class Program
     {
         [STAThread]
         static void Main(string[] args)
         {
-            Assets.Application.Run(new PulsarcLauncherForm());
+            Assets.Application.Run(new PulsarcInstallerForm());
         }
     }
 }

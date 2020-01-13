@@ -4,7 +4,7 @@ using System.Linq;
 using System.IO;
 using System.Reflection;
 
-namespace PulsarcLauncher.Util
+namespace PulsarcInstaller.Util
 {
     public static class ComputerInfo
     {
@@ -44,6 +44,18 @@ namespace PulsarcLauncher.Util
         public static string ExecutableExtension => IsOnWindows ? WINDOWS_FILE_EXTENSION : "";
 
         /// <summary>
+        /// Searches the provided directory for a Pulsac executable, if it can't find it,
+        /// assume Pulsarc is not installed in the provided path.
+        /// </summary>
+        /// <param name="path">The path to search for.</param>
+        /// <returns>True if a Pulsarc executable is the provided path. False if otherwise.</returns>
+        public static bool PulsarcExistsIn(string path)
+        {
+            return File.Exists($"{path}/Pulsarc{ExecutableExtension}");
+        }
+
+        /// <summary>
+        /// Might be outdated.
         /// Determine whether or not the Pulsarc Directory Exists.
         /// This method assumes the Launcher/Installer executable is in the same location
         /// as the Pulsarc executable.
@@ -67,7 +79,7 @@ namespace PulsarcLauncher.Util
             int indexOfLastSlash = assemblyPath.LastIndexOf('/');
             string rootAppFolder = assemblyPath.Substring(0, indexOfLastSlash);
 
-            return File.Exists($"{rootAppFolder}/Pulsarc{ExecutableExtension}");
+            return PulsarcExistsIn(rootAppFolder);
         }
 
         /// <summary>

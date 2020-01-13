@@ -5,9 +5,9 @@ using System;
 using System.Net;
 using System.ComponentModel;
 using System.IO;
-using PulsarcLauncher.Util;
+using PulsarcInstaller.Util;
 
-namespace PulsarcLauncher
+namespace PulsarcInstaller
 {
     public class DownloadProgressForm : Form
     {

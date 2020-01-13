@@ -4,7 +4,7 @@ using System.Net;
 using System.Text;
 using System.Xml;
 
-namespace PulsarcLauncher.Util
+namespace PulsarcInstaller.Util
 {
     public class UpdateXML
     {
