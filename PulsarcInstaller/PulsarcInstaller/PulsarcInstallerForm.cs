@@ -11,7 +11,7 @@ namespace PulsarcInstaller
     {
         // The label that gives information about installing/updating/launching to the user.
         private Label statusLabel = new Label()
-            { TextAlignment = TextAlignment.Center, };
+        { TextAlignment = TextAlignment.Center, };
 
         private Stopwatch installTimer = new Stopwatch();
 
@@ -39,8 +39,7 @@ namespace PulsarcInstaller
         private bool waitingForRightClick = false;
 
         // When this is true, the user can double click the form to change Install location
-        private bool canAcceptRightClick => ComputerInfo.IsOnWindows && 
-            (InstallTimerActive || waitingForRightClick);
+        private bool canAcceptRightClick => ComputerInfo.IsOnWindows && waitingForRightClick;
 
         // Defaults to the Default path first. Can be changed by the user later.
         private string installPath = ComputerInfo.DefaultInstallPath;
@@ -69,7 +68,7 @@ namespace PulsarcInstaller
                 (int)(Screen.WorkingArea.Width - Size.Width) / 2,
                 (int)(Screen.WorkingArea.Height - Size.Height) / 2);
 
-            Icon = new Icon("Assets/Icon.ico");
+            Icon = new Icon("assets/Icon.ico");
 
             // Make window unmoving, unchanging
             Maximizable = false;
@@ -126,7 +125,7 @@ namespace PulsarcInstaller
             base.OnMouseDoubleClick(e);
 
             // Open Folder Select Dialog if the timer is active
-            if (canAcceptRightClick)
+            if (InstallTimerActive)
                 ChooseInstallLocation();
         }
 
@@ -154,7 +153,7 @@ namespace PulsarcInstaller
                 ShowAlreadyInstalledMessage();
                 return;
             }
-            
+
             waitingForRightClick = false;
 
             Task InstallTimer = new Task(RunInstallTimer);
@@ -163,10 +162,22 @@ namespace PulsarcInstaller
             // Wait for the timer to finish before installing Pulsarc
             await InstallTimer;
 
+            statusLabel.Text = "Downloading...";
+
             // Install Pulsarc
             Installer installer = new Installer(installPath, this);
             installer.DoInstall();
+
+            await Task.Run(() => WaitingForInstallation(ref installer));
+
+            statusLabel.Text = "Installation is complete, launching Pulsarc...";
+            // ... Launch Pulsarc ...
+
+            Close();
         }
+
+        private void WaitingForInstallation(ref Installer installer)
+            { while (installer.InstallationComplete != true) { } }
 
         /// <summary>
         /// Opens a folder-select dialog to choose a new install location.
@@ -213,7 +224,7 @@ namespace PulsarcInstaller
             InstallTimerActive = true;
 
             // Total length (in seconds) the timer should elapse for.
-            const int TOTAL_TIME = 10;
+            const int TOTAL_TIME = 1;
 
             // Keep track of the previous second on the timer.
             int lastTimeRemaining = TOTAL_TIME + 1;

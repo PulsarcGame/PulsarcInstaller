@@ -44,10 +44,7 @@ namespace PulsarcInstaller.Util
 
                 return response.StatusCode == HttpStatusCode.OK;
             }
-            catch
-            {
-                return false;
-            }
+            catch { return false; }
         }
 
         /// <summary>

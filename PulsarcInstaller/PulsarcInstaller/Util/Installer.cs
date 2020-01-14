@@ -7,6 +7,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace PulsarcInstaller.Util
 {
@@ -20,6 +22,8 @@ namespace PulsarcInstaller.Util
 
         // Parent control
         private Control parentControl;
+
+        public bool InstallationComplete { get; private set; } = false;
 
         public Installer(string installPath, Control control)
         {
@@ -71,12 +75,18 @@ namespace PulsarcInstaller.Util
         private void DownloadAndInstall(InstallXML install)
         {
             // Download Pulsarc
-            DownloadProgressDialog progressForm = new DownloadProgressDialog(install.DownloadUri, install.MD5);
-            DialogResult result = progressForm.ShowModal(parentControl);
+            DialogResult result = DialogResult.None;
+            string tempFilePath = "";
+
+            using (var progressForm = new DownloadProgressDialog(install.DownloadUri, install.MD5))
+            {
+                result = progressForm.ShowModal(parentControl);
+                tempFilePath = progressForm.TempFilePath;
+            }
 
             // If download was successful, Install Pulsarc
             if (result == DialogResult.Ok)
-                InstallPulsarc(progressForm.TempFilePath, installPath);
+                InstallPulsarc(tempFilePath, installPath);
 
             // If the download was aborted, let the user know.
             else if (result == DialogResult.Abort)
@@ -93,6 +103,8 @@ namespace PulsarcInstaller.Util
                     MessageBoxType.Information);
         }
 
+        private static readonly object syncLock = new object();
+
         private void InstallPulsarc(string tempFilePath, string installPath, string launchArgs = "")
         {
             // If the provided installation directory does not contain "Pulsarc", then add it
@@ -100,11 +112,40 @@ namespace PulsarcInstaller.Util
             if (installPath.ToLower().Contains("pulsarc"))
                 installPath += "Pulsarc/";
 
-            using (Stream input = File.OpenRead(tempFilePath))
+            if (!File.Exists(tempFilePath))
+                return;
+
+            string zipFilePath = Path.ChangeExtension(tempFilePath, ".zip");
+
+            Thread.Sleep(10000);
+
+            //while (true)
+                try
+                {
+                    File.Move(tempFilePath, zipFilePath);
+                    //break;
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine("This shit is broke....");
+
+                    var st = new StackTrace(e, true);
+                    Debug.WriteLine(st);
+                    var frame = st.GetFrame(0);
+                    Debug.WriteLine(frame);
+                    var line = frame.GetFileLineNumber();
+                    Debug.WriteLine(line);
+                }
+
+                //tempFilePath = zipFilePath;
+
+            using (FileStream input = File.OpenRead(tempFilePath))
             using (ZipFile zipFile = new ZipFile(input))
             {
                 foreach (ZipEntry entry in zipFile)
                 {
+                    string entryPath = installPath;
+
                     // Ignore Directories and debug files
                     if (!entry.IsFile || entry.Name.Contains(".pdb"))
                         continue;
@@ -112,10 +153,10 @@ namespace PulsarcInstaller.Util
                     // If the file is a .dll prepare for it for moving into "lib" folder.
                     // Pulsarc is set upt to look in the lib folder for .dlls
                     if (entry.Name.Contains(".dll") || entry.Name.Contains(".dylib"))
-                        installPath += "lib/";
+                        entryPath += "lib/";
 
                     // entry.Name should include the full path RELATIVE TO THE ZIP FILE
-                    string newPath = Path.Combine(installPath, entry.Name);
+                    string newPath = Path.Combine(entryPath, entry.Name);
                     string directoryName = Path.GetDirectoryName(newPath);
 
                     // Create a new directory if needed.
@@ -133,6 +174,8 @@ namespace PulsarcInstaller.Util
                         StreamUtils.Copy(zipStream, output, buffer);
                 }
             }
+
+            InstallationComplete = true;
         }
         #endregion
     }

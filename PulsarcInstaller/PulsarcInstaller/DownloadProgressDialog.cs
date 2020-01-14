@@ -20,8 +20,6 @@ namespace PulsarcInstaller
 
         private string md5;
 
-        private bool full;
-
         private ProgressBar downloadProgress = new ProgressBar()
         {
             MinValue = 0,
@@ -46,7 +44,7 @@ namespace PulsarcInstaller
 
             SetUpClientAndWorker();
 
-            try { webClient.DownloadFileAsync(location, TempFilePath); }
+            try { using (webClient) { webClient.DownloadFileAsync(location, TempFilePath); } }
             catch { CloseWithResult(DialogResult.No); }
         }
 
@@ -62,7 +60,7 @@ namespace PulsarcInstaller
         /// </summary>
         private void SetUpWindow()
         {
-            Size = new Size(400, 200);
+            Size = new Size(400, 75);
 
             // Center the window
             Location = new Point(
@@ -111,6 +109,7 @@ namespace PulsarcInstaller
             webClient.DownloadFileCompleted += new AsyncCompletedEventHandler(WC_DownloadFileCompleted);
 
             bgWorker = new BackgroundWorker();
+            bgWorker.WorkerSupportsCancellation = true;
             bgWorker.DoWork += new DoWorkEventHandler(BW_DoWork);
             bgWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(BW_RunWorkerCompleted);
         }
@@ -120,25 +119,43 @@ namespace PulsarcInstaller
         {
             base.OnClosed(e);
 
-            bool triggeredDialog = false;
+            bool triggeredAbort = false;
 
             // Stop webClient if it's busy
             if (webClient.IsBusy)
             {
                 webClient.CancelAsync();
-                triggeredDialog = true;
+                triggeredAbort = true;
             }
 
             // Stop bgWorker if it's busy
             if (bgWorker.IsBusy)
             {
                 bgWorker.CancelAsync();
-                triggeredDialog = true;
+                triggeredAbort = true;
             }
 
-            // Close with an Abort result
-            if (triggeredDialog)
-                CloseWithResult(DialogResult.Abort);
+            if (triggeredAbort)
+                Result = DialogResult.Abort;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            if (webClient.IsBusy)
+                webClient.CancelAsync();
+            webClient.Dispose();
+
+            if (bgWorker.IsBusy)
+                bgWorker.CancelAsync();
+            bgWorker.Dispose();
+
+            TempFilePath = null;
+            md5 = null;
+
+            downloadProgress.Dispose();
+            progressText.Dispose();
         }
 
         #region WebClient and BackgroundWorker methods
@@ -153,8 +170,8 @@ namespace PulsarcInstaller
             progressText.Text = $"{bytesReceived} / {totalBytes}";
 
             // Formats bytes to be more readable.
-            // i.e., we're downloading 3000 bytes, the format will change from "x B / 3000 b" to
-            // "x KB / 2.92 KB"
+            // i.e., we're downloading 3000 bytes, this method will change format from "x B / 3000 b"
+            // to "x KB / 2.92 KB"
             string FormatBytes(in long bytes, int decimalPlaces = 2)
             {
                 double byteAmount = bytes;
@@ -205,7 +222,7 @@ namespace PulsarcInstaller
             else
             {
                 progressText.Text = "Verifying Download...";
-                bgWorker.RunWorkerAsync(new string[] { TempFilePath, md5 });
+                using (bgWorker) { bgWorker.RunWorkerAsync(new string[] { TempFilePath, md5 }); }
             }
         }
 
@@ -215,6 +232,7 @@ namespace PulsarcInstaller
             string file = ((string[])e.Argument)[0];
             string updateMD5 = ((string[])e.Argument)[1];
 
+            // Checksum with the MD5
             if (Hasher.HashFile(file, HashType.MD5) != updateMD5)
                 e.Result = DialogResult.No;
             else
