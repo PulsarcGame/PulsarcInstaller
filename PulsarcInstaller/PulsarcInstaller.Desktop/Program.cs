@@ -10,7 +10,7 @@ namespace PulsarcInstaller.Desktop
         [STAThread]
         static void Main(string[] args)
         {
-            Assets.Application.Run(new PulsarcInstallerForm()));
+            Assets.Application.Run(new PulsarcInstallerForm());
         }
     }
 }
