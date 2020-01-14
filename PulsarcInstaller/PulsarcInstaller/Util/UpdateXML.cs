@@ -6,6 +6,7 @@ using System.Xml;
 
 namespace PulsarcInstaller.Util
 {
+    // Saving this for AutoUpdate within Pulsarc.
     [Obsolete("This project is now for installing pulsarc, not installing & updating.")]
     public class UpdateXML
     {

@@ -9,10 +9,8 @@ using PulsarcInstaller.Util;
 
 namespace PulsarcInstaller
 {
-    public class DownloadProgressForm : Form
+    public class DownloadProgressDialog : Dialog<DialogResult>
     {
-        private DialogResult result = DialogResult.None;
-
         // Used to download data from server
         private WebClient webClient;
 
@@ -37,7 +35,7 @@ namespace PulsarcInstaller
             TextAlignment = TextAlignment.Center,
         };
 
-        public DownloadProgressForm(Uri location, string md5)
+        public DownloadProgressDialog(Uri location, string md5)
         {
             InitializeComponent();
 
@@ -49,16 +47,7 @@ namespace PulsarcInstaller
             SetUpClientAndWorker();
 
             try { webClient.DownloadFileAsync(location, TempFilePath); }
-            catch { CloseWithDialog(DialogResult.No); }
-        }
-
-        public new DialogResult Show()
-        {
-            base.Show();
-
-            // ...
-
-            return result;
+            catch { CloseWithResult(DialogResult.No); }
         }
 
         #region Init Methods
@@ -149,7 +138,7 @@ namespace PulsarcInstaller
 
             // Close with an Abort result
             if (triggeredDialog)
-                CloseWithDialog(DialogResult.Abort);
+                CloseWithResult(DialogResult.Abort);
         }
 
         #region WebClient and BackgroundWorker methods
@@ -210,9 +199,9 @@ namespace PulsarcInstaller
         private void WC_DownloadFileCompleted(object sender, AsyncCompletedEventArgs e)
         {
             if (e.Error != null)
-                CloseWithDialog(DialogResult.No);
+                CloseWithResult(DialogResult.No);
             else if (e.Cancelled)
-                CloseWithDialog(DialogResult.Abort);
+                CloseWithResult(DialogResult.Abort);
             else
             {
                 progressText.Text = "Verifying Download...";
@@ -237,22 +226,16 @@ namespace PulsarcInstaller
         /// </summary>
         private void BW_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            CloseWithDialog((DialogResult)e.Result);
+            CloseWithResult((DialogResult)e.Result);
         }
         #endregion
 
-        // Not sure how to set the DialogResult for this form using Eto,
-        // Pretty sure this just pops up a dialog window with the DialogResult provided
-        // And then closes the whole thing when it's done, but haven't tested yet.
-        // TODO?: Turn this class from a "Form" into a "Dialog" instead?
-        private void CloseWithDialog(DialogResult result)
+        /// <summary>
+        /// Closes this Dialog and makes sure the provided result is assigned before closing.
+        /// </summary>
+        private void CloseWithResult(DialogResult result)
         {
-            Dialog<DialogResult> dialog = new Dialog<DialogResult>()
-                { Result = result, };
-
-            dialog.ShowModal(this);
-            dialog.Close(result);
-
+            Result = result;
             Close();
         }
     }

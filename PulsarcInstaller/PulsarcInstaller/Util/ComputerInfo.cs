@@ -15,7 +15,7 @@ namespace PulsarcInstaller.Util
         private const string WINDOWS_FILE_EXTENSION = ".exe";
 
         // %appdata% folder
-        private const string DEFAULT_WINDOWS_FOLDER_NAME = ".Pulsarc";
+        private const string DEFAULT_WINDOWS_FOLDER_NAME = ".Pulsarc/";
         private static readonly string DefaultWindowsInstallPath =
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData).Replace('\\', '/')
             + '/' + DEFAULT_WINDOWS_FOLDER_NAME;
@@ -25,32 +25,48 @@ namespace PulsarcInstaller.Util
         private const string MAC_FILE_EXTENSION = "";
 
         // TODO
-        private const string DEFAULT_MAC_FOLDER_NAME = "Pulsarc";
+        private const string DEFAULT_MAC_FOLDER_NAME = "Pulsarc/";
         private static string DefaultMacInstallPath = "TODO" + '/' + DEFAULT_MAC_FOLDER_NAME;
 
         // Linux
         public static bool IsOnLinux => RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
 
         // TODO
-        private const string DEFAULT_LINUX_FOLDER_NAME = "Pulsarc";
+        private const string DEFAULT_LINUX_FOLDER_NAME = "Pulsarc/";
         private static string DefaultLinuxInstallPath = "TODO" + '/' + DEFAULT_LINUX_FOLDER_NAME;
         private const string LINUX_FILE_EXTENSION = "TODO";
 
-        // The default directory
-        public static string DefaultFolderName =>   IsOnWindows ? DEFAULT_WINDOWS_FOLDER_NAME
-                                                  : IsOnMac ? DEFAULT_MAC_FOLDER_NAME
-                                                  : IsOnLinux ? DefaultLinuxInstallPath
-                                                  : throw new Exception("Invalid Platform");
+        // Invalid Platform Exception
+        private static Exception invalidPlat = new Exception ("Invalid Platform");
 
-        public static string DefaultInstallPath =>  IsOnWindows ? DefaultWindowsInstallPath
-                                                  : IsOnMac ? DefaultMacInstallPath
-                                                  : IsOnLinux ? DefaultLinuxInstallPath
-                                                  : throw new Exception("Invalid Platform");
+        // The default path
+        public static string DefaultFolderName =>    IsOnWindows ? DEFAULT_WINDOWS_FOLDER_NAME
+                                                   : IsOnMac ? DEFAULT_MAC_FOLDER_NAME
+                                                   : IsOnLinux ? DefaultLinuxInstallPath
+                                                   : throw invalidPlat;
 
-        public static string ExecutableExtension => IsOnWindows ? WINDOWS_FILE_EXTENSION
-                                                  : IsOnMac ? MAC_FILE_EXTENSION
-                                                  : IsOnLinux ? LINUX_FILE_EXTENSION
-                                                  : throw new Exception("Invalid Platform");
+        public static string DefaultInstallPath =>   IsOnWindows ? DefaultWindowsInstallPath
+                                                   : IsOnMac ? DefaultMacInstallPath
+                                                   : IsOnLinux ? DefaultLinuxInstallPath
+                                                   : throw invalidPlat;
+
+        public static string ExecutableExtension =>  IsOnWindows ? WINDOWS_FILE_EXTENSION
+                                                   : IsOnMac ? MAC_FILE_EXTENSION
+                                                   : IsOnLinux ? LINUX_FILE_EXTENSION
+                                                   : throw invalidPlat;
+
+        // The address to the xml file for installation
+        private const string INSTALL_PATH_PREFIX = "https://pulsarc.net/Releases/CurrentVersion-";
+
+        // The full path to the xml file for installation. Formatted as so:
+        // "https://pulsarc.net/Releases/CurrentVersion-{platform}.xml"
+        public static string ServerDownloadPath => INSTALL_PATH_PREFIX + "-" + (
+                                                   IsOnWindows ?
+                                                       Is64Bit ? "win64" : "win32"
+                                                 : IsOnMac ? "osx"
+                                                 : IsOnLinux ? "linux"
+                                                 : throw invalidPlat
+                                                 ) + ".xml";
 
         /// <summary>
         /// Sees if a Pulsarc executable is in the path provided.

@@ -11,16 +11,13 @@ namespace PulsarcInstaller
     {
         // The label that gives information about installing/updating/launching to the user.
         private Label statusLabel = new Label()
-        {
-            Text = "Checking for updates...",
-            TextAlignment = TextAlignment.Center,
-        };
+            { TextAlignment = TextAlignment.Center, };
 
         private Stopwatch installTimer = new Stopwatch();
 
         // Keeps track of the installTimer, will also start and stop it automatically.
-        // If you set this to true, the installTimer will restart.
-        // If you set this to false, the installerTimer will stop.
+        // If you change this from false to true, the installTimer will restart.
+        // If you change this from true to false, the installTimer will stop.
         private bool InstallTimerActive
         {
             get => installTimer.IsRunning;
@@ -39,10 +36,11 @@ namespace PulsarcInstaller
 
         // True if Pulsarc is already installed, and waiting from input from the player to
         // Change install location or close the Installer.
-        private bool alreadyInstalledAndWaitingForInput = false;
+        private bool waitingForRightClick = false;
 
         // When this is true, the user can double click the form to change Install location
-        private bool CanChangeInstallLocation => InstallTimerActive || alreadyInstalledAndWaitingForInput;
+        private bool canAcceptRightClick => ComputerInfo.IsOnWindows && 
+            (InstallTimerActive || waitingForRightClick);
 
         // Defaults to the Default path first. Can be changed by the user later.
         private string installPath = ComputerInfo.DefaultInstallPath;
@@ -111,9 +109,16 @@ namespace PulsarcInstaller
         {
             base.OnShown(e);
 
-            // ... TODO?: Check for Installer updates ...
+            // Currently Installer only works for Windows
+            if (ComputerInfo.IsOnWindows)
+                StartInstallTimer();
+            else
+            {
+                statusLabel.Text = "Sorry, but your platform is not supported yet." +
+                    "Right click to close this window.";
 
-            StartInstallTimer();
+                waitingForRightClick = true;
+            }
         }
 
         protected override void OnMouseDoubleClick(MouseEventArgs e)
@@ -121,12 +126,51 @@ namespace PulsarcInstaller
             base.OnMouseDoubleClick(e);
 
             // Open Folder Select Dialog if the timer is active
-            if (CanChangeInstallLocation)
+            if (canAcceptRightClick)
                 ChooseInstallLocation();
+        }
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            base.OnMouseDown(e);
+
+            // If the right button is pressed while waiting for input Message is up, close
+            if (canAcceptRightClick && e.Buttons == MouseButtons.Alternate)
+                Close();
         }
         #endregion
 
         #region Installation Methods
+        /// <summary>
+        /// Starts a timer that counts down from 10 seconds before installation.
+        /// This gives the user a few seconds to decide a new install location.
+        /// Uses async to update the UI and let the user know the time left.
+        /// Similar to osu's installation method.
+        /// </summary>
+        private async void StartInstallTimer()
+        {
+            if (ComputerInfo.PulsarcDirectoryExistsIn(installPath))
+            {
+                ShowAlreadyInstalledMessage();
+                return;
+            }
+            
+            waitingForRightClick = false;
+
+            Task InstallTimer = new Task(RunInstallTimer);
+            InstallTimer.Start();
+
+            // Wait for the timer to finish before installing Pulsarc
+            await InstallTimer;
+
+            // Install Pulsarc
+            Installer installer = new Installer(installPath, this);
+            installer.DoInstall();
+        }
+
+        /// <summary>
+        /// Opens a folder-select dialog to choose a new install location.
+        /// </summary>
         private void ChooseInstallLocation()
         {
             // Stop timer
@@ -144,34 +188,14 @@ namespace PulsarcInstaller
             // Reset timer and countdown again.
             InstallTimerActive = true;
         }
-
+        
         /// <summary>
-        /// Starts a timer that counts down from 10 seconds before installation.
-        /// This gives the user a few seconds to decide a new install location.
-        /// Uses async to update the UI and let the user know the time left.
-        /// Similar to osu's installation method.
+        /// Displays a message telling the user that Pulsarc is already installed
+        /// at the selected directory.
         /// </summary>
-        private async void StartInstallTimer()
-        {
-            if (ComputerInfo.PulsarcDirectoryExistsIn(installPath))
-            {
-                ShowAlreadyInstalledMessage();
-                return;
-            }
-
-            alreadyInstalledAndWaitingForInput = false;
-
-            Task InstallTimer = new Task(RunInstallTimer);
-            InstallTimer.Start();
-
-            // Wait for the timer to finish before installing Pulsarc
-            await InstallTimer;
-            //Installer.Install();
-        }
-
         private void ShowAlreadyInstalledMessage()
         {
-            alreadyInstalledAndWaitingForInput = true;
+            waitingForRightClick = true;
 
             statusLabel.Text = "It seems that Pulsarc" +
                 "\nis already installed at" +
@@ -198,8 +222,8 @@ namespace PulsarcInstaller
             {
                 // Find remaining time by subtracting the current time passed (rounded down)
                 // from the total time.
-                int timeRemaining = TOTAL_TIME
-                    - (int)Math.Floor(installTimer.ElapsedMilliseconds / 1000d);
+                int timeRemaining = TOTAL_TIME - 
+                    (int)Math.Floor(installTimer.ElapsedMilliseconds / 1000d);
 
                 // If a new second has passed
                 if (timeRemaining != lastTimeRemaining)
@@ -220,7 +244,7 @@ namespace PulsarcInstaller
                     Assets.Application.Invoke(lowerTimer);
                 }
 
-                // Stop the timer once we're at or below zero
+                // Stop the timer and this loop once we're at or below zero
                 if (timeRemaining <= 0)
                 {
                     InstallTimerActive = false;

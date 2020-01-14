@@ -1,4 +1,7 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
+<!-- Remember to make an xml file for each platform!
+     Name the file "CurrentVersion-{platform}.xml"
+     See ComputerInfo.ServerDownloadPath to see what to replace {platform} with -->
 <install appId="Pulsarc">
   <version>x.x.x.0</version>
   <download>https://github.com/PulsarcGame/Pulsarc/releases/download/...</download>

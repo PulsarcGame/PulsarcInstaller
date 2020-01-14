@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using PulsarcInstaller.Util;
 
 namespace PulsarcInstaller.Desktop
@@ -8,7 +10,7 @@ namespace PulsarcInstaller.Desktop
         [STAThread]
         static void Main(string[] args)
         {
-            Assets.Application.Run(new PulsarcInstallerForm());
+            Assets.Application.Run(new PulsarcInstallerForm()));
         }
     }
 }
