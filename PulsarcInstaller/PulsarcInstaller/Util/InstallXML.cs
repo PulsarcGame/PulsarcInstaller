@@ -66,16 +66,16 @@ namespace PulsarcInstaller.Util
             {
                 // Load XML from the location provided
                 XmlDocument doc = new XmlDocument();
-                doc.LoadXml(location.AbsoluteUri);
+                doc.Load(location.AbsoluteUri);
 
-                XmlNode node = doc.SelectSingleNode($"//install[@appId=Pulsarc']");
+                XmlNode node = doc.SelectSingleNode($"//install[@appId='Pulsarc']");
 
                 if (node == null)
                     return null;
 
                 // Get all the data from the root node
                 version = Version.Parse(node["version"].InnerText);
-                downloadURL = node["fullurl"].InnerText;
+                downloadURL = node["download"].InnerText;
                 md5 = node["md5"].InnerText;
 
                 // Use that data to make and return a new UpdateXML
