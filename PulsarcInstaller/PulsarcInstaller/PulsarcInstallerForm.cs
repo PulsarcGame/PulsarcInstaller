@@ -110,7 +110,7 @@ namespace PulsarcInstaller
 
             // Currently Installer only works for Windows
             if (ComputerInfo.IsOnWindows)
-                StartInstallTimer();
+                StartInstallationProcess();
             else
             {
                 statusLabel.Text = "Sorry, but your platform is not supported yet." +
@@ -137,16 +137,17 @@ namespace PulsarcInstaller
             if (canAcceptRightClick && e.Buttons == MouseButtons.Alternate)
                 Close();
         }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+
+            Debug.WriteLine(statusLabel.Text);
+        }
         #endregion
 
         #region Installation Methods
-        /// <summary>
-        /// Starts a timer that counts down from 10 seconds before installation.
-        /// This gives the user a few seconds to decide a new install location.
-        /// Uses async to update the UI and let the user know the time left.
-        /// Similar to osu's installation method.
-        /// </summary>
-        private async void StartInstallTimer()
+        private async void StartInstallationProcess()
         {
             if (ComputerInfo.PulsarcDirectoryExistsIn(installPath))
             {
@@ -156,11 +157,11 @@ namespace PulsarcInstaller
 
             waitingForRightClick = false;
 
-            Task InstallTimer = new Task(RunInstallTimer);
-            InstallTimer.Start();
+            Task installTimer = new Task(RunInstallTimer);
+            installTimer.Start();
 
             // Wait for the timer to finish before installing Pulsarc
-            await InstallTimer;
+            await installTimer;
 
             statusLabel.Text = "Downloading...";
 
@@ -171,35 +172,12 @@ namespace PulsarcInstaller
             await Task.Run(() => WaitingForInstallation(ref installer));
 
             statusLabel.Text = "Installation is complete, launching Pulsarc...";
+
             // ... Launch Pulsarc ...
 
             Close();
         }
 
-        private void WaitingForInstallation(ref Installer installer)
-            { while (installer.InstallationComplete != true) { } }
-
-        /// <summary>
-        /// Opens a folder-select dialog to choose a new install location.
-        /// </summary>
-        private void ChooseInstallLocation()
-        {
-            // Stop timer
-            InstallTimerActive = false;
-
-            // Bring up dialog
-            SelectFolderDialog selectFolder = new SelectFolderDialog();
-            selectFolder.ShowDialog(this);
-
-            // Use the selected directory as the new install path.
-            // If the user cancelled out of the dialog, we get an error here,
-            // in that case just catch it and continue.
-            try { installPath = selectFolder.Directory; } catch { }
-
-            // Reset timer and countdown again.
-            InstallTimerActive = true;
-        }
-        
         /// <summary>
         /// Displays a message telling the user that Pulsarc is already installed
         /// at the selected directory.
@@ -233,7 +211,7 @@ namespace PulsarcInstaller
             {
                 // Find remaining time by subtracting the current time passed (rounded down)
                 // from the total time.
-                int timeRemaining = TOTAL_TIME - 
+                int timeRemaining = TOTAL_TIME -
                     (int)Math.Floor(installTimer.ElapsedMilliseconds / 1000d);
 
                 // If a new second has passed
@@ -262,6 +240,30 @@ namespace PulsarcInstaller
                     return;
                 }
             }
+        }
+
+        private void WaitingForInstallation(ref Installer installer)
+            { while (installer.InstallationComplete != true) { } }
+
+        /// <summary>
+        /// Opens a folder-select dialog to choose a new install location.
+        /// </summary>
+        private void ChooseInstallLocation()
+        {
+            // Stop timer
+            InstallTimerActive = false;
+
+            // Bring up dialog
+            SelectFolderDialog selectFolder = new SelectFolderDialog();
+            selectFolder.ShowDialog(this);
+
+            // Use the selected directory as the new install path.
+            // If the user cancelled out of the dialog, we get an error here,
+            // in that case just catch it and continue.
+            try { installPath = selectFolder.Directory; } catch { }
+
+            // Reset timer and countdown again.
+            InstallTimerActive = true;
         }
         #endregion
     }

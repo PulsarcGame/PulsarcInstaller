@@ -80,8 +80,8 @@ namespace PulsarcInstaller.Util
 
             using (var progressForm = new DownloadProgressDialog(install.DownloadUri, install.MD5))
             {
-                result = progressForm.ShowModal(parentControl);
                 tempFilePath = progressForm.TempFilePath;
+                result = progressForm.ShowModal(parentControl);
             }
 
             // If download was successful, Install Pulsarc
@@ -103,13 +103,11 @@ namespace PulsarcInstaller.Util
                     MessageBoxType.Information);
         }
 
-        private static readonly object syncLock = new object();
-
         private void InstallPulsarc(string tempFilePath, string installPath, string launchArgs = "")
         {
             // If the provided installation directory does not contain "Pulsarc", then add it
             // Safegaurd for users who may just try to install onto their Desktop or similar.
-            if (installPath.ToLower().Contains("pulsarc"))
+            if (!installPath.ToLower().Contains("pulsarc"))
                 installPath += "Pulsarc/";
 
             if (!File.Exists(tempFilePath))
@@ -117,29 +115,25 @@ namespace PulsarcInstaller.Util
 
             string zipFilePath = Path.ChangeExtension(tempFilePath, ".zip");
 
-            Thread.Sleep(10000);
+            try
+            {
+                File.Copy(tempFilePath, zipFilePath);
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine("This shit is broke....");
 
-            //while (true)
-                try
-                {
-                    File.Move(tempFilePath, zipFilePath);
-                    //break;
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine("This shit is broke....");
+                var st = new StackTrace(e, true);
+                Debug.WriteLine(st);
+                var frame = st.GetFrame(0);
+                Debug.WriteLine(frame);
+                var line = frame.GetFileLineNumber();
+                Debug.WriteLine(line);
+            }
 
-                    var st = new StackTrace(e, true);
-                    Debug.WriteLine(st);
-                    var frame = st.GetFrame(0);
-                    Debug.WriteLine(frame);
-                    var line = frame.GetFileLineNumber();
-                    Debug.WriteLine(line);
-                }
+            //tempFilePath = zipFilePath;
 
-                //tempFilePath = zipFilePath;
-
-            using (FileStream input = File.OpenRead(tempFilePath))
+            using (FileStream input = File.OpenRead(zipFilePath))
             using (ZipFile zipFile = new ZipFile(input))
             {
                 foreach (ZipEntry entry in zipFile)
@@ -152,7 +146,7 @@ namespace PulsarcInstaller.Util
 
                     // If the file is a .dll prepare for it for moving into "lib" folder.
                     // Pulsarc is set upt to look in the lib folder for .dlls
-                    if (entry.Name.Contains(".dll") || entry.Name.Contains(".dylib"))
+                    if (entry.Name.Contains(".dll") || entry.Name.Contains(".dylib") || entry.Name.Contains(".so"))
                         entryPath += "lib/";
 
                     // entry.Name should include the full path RELATIVE TO THE ZIP FILE
@@ -174,6 +168,9 @@ namespace PulsarcInstaller.Util
                         StreamUtils.Copy(zipStream, output, buffer);
                 }
             }
+
+            File.Delete(zipFilePath);
+            File.Delete(tempFilePath);
 
             InstallationComplete = true;
         }

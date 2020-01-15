@@ -60,7 +60,7 @@ namespace PulsarcInstaller
         /// </summary>
         private void SetUpWindow()
         {
-            Size = new Size(400, 75);
+            Size = new Size(400, 100);
 
             // Center the window
             Location = new Point(
