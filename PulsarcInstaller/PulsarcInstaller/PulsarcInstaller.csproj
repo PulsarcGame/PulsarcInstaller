@@ -7,6 +7,9 @@
     <Title>PulsarcInstaller</Title>
     <Copyright>Copyright © 2019</Copyright>
     <Description>Description of PulsarcInstaller</Description>
+    <ApplicationIcon />
+    <OutputType>Library</OutputType>
+    <StartupObject />
   </PropertyGroup>
 	
   <ItemGroup>
@@ -35,6 +38,12 @@
   <ItemGroup>
     <PackageReference Include="Eto.Forms" Version="2.4.1" />
     <PackageReference Include="SharpZipLib" Version="1.2.0" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Reference Include="Interop.IWshRuntimeLibrary">
+      <HintPath>..\..\..\..\..\..\..\Downloads\Interop.IWshRuntimeLibrary.dll</HintPath>
+    </Reference>
   </ItemGroup>
   
 </Project>

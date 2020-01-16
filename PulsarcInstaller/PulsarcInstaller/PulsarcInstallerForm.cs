@@ -157,10 +157,9 @@ namespace PulsarcInstaller
 
             waitingForRightClick = false;
 
+            // Wait for the timer to finish before installing Pulsarc
             Task installTimer = new Task(RunInstallTimer);
             installTimer.Start();
-
-            // Wait for the timer to finish before installing Pulsarc
             await installTimer;
 
             statusLabel.Text = "Downloading...";
@@ -168,12 +167,16 @@ namespace PulsarcInstaller
             // Install Pulsarc
             Installer installer = new Installer(installPath, this);
             installer.DoInstall();
-
             await Task.Run(() => WaitingForInstallation(ref installer));
 
             statusLabel.Text = "Installation is complete, launching Pulsarc...";
 
-            // ... Launch Pulsarc ...
+            // Launch Pulsarc
+            try
+            {
+                Process.Start(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"/Pulsarc.lnk");
+            }
+            catch { }
 
             Close();
         }
@@ -202,7 +205,7 @@ namespace PulsarcInstaller
             InstallTimerActive = true;
 
             // Total length (in seconds) the timer should elapse for.
-            const int TOTAL_TIME = 1;
+            const int TOTAL_TIME = 10;
 
             // Keep track of the previous second on the timer.
             int lastTimeRemaining = TOTAL_TIME + 1;

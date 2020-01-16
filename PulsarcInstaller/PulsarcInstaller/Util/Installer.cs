@@ -2,13 +2,10 @@
 using ICSharpCode.SharpZipLib.Zip;
 using ICSharpCode.SharpZipLib.Core;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace PulsarcInstaller.Util
 {
@@ -115,64 +112,126 @@ namespace PulsarcInstaller.Util
 
             string zipFilePath = Path.ChangeExtension(tempFilePath, ".zip");
 
-            try
+            for (int i = 0; i < 5; i++)
             {
-                File.Copy(tempFilePath, zipFilePath);
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine("This shit is broke....");
+                try
+                {
+                    File.Copy(tempFilePath, zipFilePath);
+                    break;
+                }
+                catch
+                {
+                    if (i <= 4)
+                    {
+                        MessageBox.Show("There was a problem during installation.\nPlease try again.",
+                            "Installation Error",
+                            MessageBoxButtons.OK,
+                            MessageBoxType.Information);
 
-                var st = new StackTrace(e, true);
-                Debug.WriteLine(st);
-                var frame = st.GetFrame(0);
-                Debug.WriteLine(frame);
-                var line = frame.GetFileLineNumber();
-                Debug.WriteLine(line);
+                        goto DeleteFiles;
+                    }
+                }
             }
-
-            //tempFilePath = zipFilePath;
 
             using (FileStream input = File.OpenRead(zipFilePath))
             using (ZipFile zipFile = new ZipFile(input))
             {
                 foreach (ZipEntry entry in zipFile)
                 {
-                    string entryPath = installPath;
-
-                    // Ignore Directories and debug files
-                    if (!entry.IsFile || entry.Name.Contains(".pdb"))
+                    // Ignore uneeded entries
+                    if (!KeepEntry(entry))
                         continue;
 
-                    // If the file is a .dll prepare for it for moving into "lib" folder.
-                    // Pulsarc is set upt to look in the lib folder for .dlls
-                    if (entry.Name.Contains(".dll") || entry.Name.Contains(".dylib") || entry.Name.Contains(".so"))
-                        entryPath += "lib/";
-
-                    // entry.Name should include the full path RELATIVE TO THE ZIP FILE
-                    string newPath = Path.Combine(entryPath, entry.Name);
-                    string directoryName = Path.GetDirectoryName(newPath);
+                    // entry.Name includes the full path relative to the .zip file
+                    // Add that path ontop of our installPath to move the files accordingly.
+                    string newPath = Path.Combine(installPath, entry.Name);
 
                     // Create a new directory if needed.
+                    string directoryName = Path.GetDirectoryName(newPath);
                     if (directoryName.Length > 0)
                         Directory.CreateDirectory(directoryName);
 
-                    // According to SharpZipLib 4k is optimum
+                    // According to SharpZipLib 4KB is optimum
                     byte[] buffer = new byte[4096];
 
                     // Unzip the file in buffered chunks.
                     // According to SharpZipLib this uses less memory than unzipping the whole
-                    // thing.
+                    // thing At once.
                     using (Stream zipStream = zipFile.GetInputStream(entry))
                     using (Stream output = File.Create(newPath))
+                    {
                         StreamUtils.Copy(zipStream, output, buffer);
+
+                        if (ShouldHideFile(entry.Name))
+                            File.SetAttributes(newPath, File.GetAttributes(newPath) | FileAttributes.Hidden);
+                    }
                 }
             }
 
-            File.Delete(zipFilePath);
-            File.Delete(tempFilePath);
+            // Create Desktop Shortcut
+            if (ComputerInfo.IsOnWindows)
+                Shortcut.CreateOnWindows(installPath);
+            // TODO: Linux/Max desktop shortcuts.
+
+            DeleteFiles:
+            Thread.Sleep(2000);
+            try { File.Delete(zipFilePath); } catch { try { File.Delete(zipFilePath); } catch { } }
+            try { File.Delete(tempFilePath); } catch { try { File.Delete(tempFilePath); } catch { } }
 
             InstallationComplete = true;
+
+            // Whether or not an entry is needed for this installation.
+            // TODO: Clean the .zip files before uploading rather than having the installer do it.
+            bool KeepEntry(in ZipEntry entry)
+            {
+                // If the entry is a file without the .pdb extension and is good for the
+                // current platform, return true.
+                return entry.IsFile && !entry.Name.Contains(".pdb") && ForRightPlatform(entry.Name);
+
+                bool ForRightPlatform(in string name)
+                {
+                    if (ComputerInfo.IsOnWindows)
+                    {
+                        /*// If 64 bit, don't care about 32 bit dlls
+                        if (ComputerInfo.Is64Bit && name.Contains("x64"))
+                            return false;
+
+                        // If 32 bit, don't care about 64 bit dlls
+                        if (!ComputerInfo.Is64Bit && name.Contains("x86"))
+                            return false;*/
+
+                        // Get rid of .dylibs and .sos we don't need them.
+                        if (name.Contains(".dylib") || name.Contains(".so"))
+                            return false;
+                    }
+                    else if (ComputerInfo.IsOnMac)
+                    {
+                        // Mac doesn't use .dlls
+                        // Might not use .sos either
+                        if (name.Contains(".dll"))
+                            return false;
+                    }
+                    else if (ComputerInfo.IsOnLinux)
+                    {
+                        // Linux doesn't use .dlls or .dylibs
+                        if (name.Contains(".dll") || name.Contains(".dylib"))
+                            return false;
+                    }
+
+                    return true;
+                }
+            }
+
+            bool ShouldHideFile(in string name)
+            {
+                string[] hiddenFileTypes = { ".dll", ".so", ".dylib", ".config", ".json", };
+
+                foreach (string fileType in hiddenFileTypes)
+                    if (name.Contains(fileType))
+                        return true;
+
+                return false;
+            }
         }
         #endregion
     }
