@@ -1,4 +1,4 @@
-﻿using Eto.Forms;
+using Eto.Forms;
 using Eto.Drawing;
 using PulsarcInstaller.Util;
 using System;
@@ -11,7 +11,7 @@ namespace PulsarcInstaller
     {
         // The label that gives information about installing/updating/launching to the user.
         private Label statusLabel = new Label()
-        { TextAlignment = TextAlignment.Center, };
+            { TextAlignment = TextAlignment.Center, };
 
         private Stopwatch installTimer = new Stopwatch();
 
@@ -103,7 +103,7 @@ namespace PulsarcInstaller
         }
         #endregion
 
-        #region Overriden Events
+        #region Events
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
@@ -137,13 +137,6 @@ namespace PulsarcInstaller
             if (canAcceptRightClick && e.Buttons == MouseButtons.Alternate)
                 Close();
         }
-
-        protected override void OnClosed(EventArgs e)
-        {
-            base.OnClosed(e);
-
-            Debug.WriteLine(statusLabel.Text);
-        }
         #endregion
 
         #region Installation Methods
@@ -162,21 +155,30 @@ namespace PulsarcInstaller
             installTimer.Start();
             await installTimer;
 
-            statusLabel.Text = "Downloading...";
+            statusLabel.Text = "Starting Download...";
 
             // Install Pulsarc
             Installer installer = new Installer(installPath, this);
             installer.DoInstall();
-            await Task.Run(() => WaitingForInstallation(ref installer));
-
+            await Task.Run(() => WaitingForInstallation(installer));
+            
+            // TODO: Shows up for a brief second before closing, fix this to show up earlier?
             statusLabel.Text = "Installation is complete, launching Pulsarc...";
 
             // Launch Pulsarc
             try
             {
-                Process.Start(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"/Pulsarc.lnk");
+                // Make sure Pulsarc is launched correctly
+                ProcessStartInfo startInfo = new ProcessStartInfo(installPath + @"Pulsarc.exe")
+                {
+                    UseShellExecute = false,
+                    WorkingDirectory = installPath,
+                };
+
+                Process.Start(startInfo);
             }
-            catch { }
+            catch
+            { }
 
             Close();
         }
@@ -245,8 +247,11 @@ namespace PulsarcInstaller
             }
         }
 
-        private void WaitingForInstallation(ref Installer installer)
-            { while (installer.InstallationComplete != true) { } }
+        private void WaitingForInstallation(in Installer installer)
+        {
+            while (installer.InstallationComplete != true)
+            { }
+        }
 
         /// <summary>
         /// Opens a folder-select dialog to choose a new install location.

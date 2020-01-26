@@ -37,7 +37,7 @@ namespace PulsarcInstaller.Util
         private const string LINUX_FILE_EXTENSION = "TODO";
 
         // Invalid Platform Exception
-        private static Exception invalidPlat = new Exception ("Invalid Platform");
+        private static Exception invalidPlat = new Exception("Invalid Platform");
 
         // The default path
         public static string DefaultFolderName =>    IsOnWindows ? DEFAULT_WINDOWS_FOLDER_NAME

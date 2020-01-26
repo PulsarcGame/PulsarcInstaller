@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -24,9 +24,27 @@
   </ItemGroup>
 	
   <ItemGroup>
+    <COMReference Include="IWshRuntimeLibrary.dll" Condition=" '$(MSBuildRuntimeType)' != 'Core' ">
+      <Guid>f935dc20-1cf0-11d0-adb9-00c04fd58a0b</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>false</Isolated>
+      <Private>true</Private>
+    </COMReference>
+  </ItemGroup>
+	
+  <ItemGroup>
     <EmbeddedResource Include="assets\logo.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
+  </ItemGroup>
+  
+  <ItemGroup>
+        <None Update="assets\Icon.ico">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 	
   <ItemGroup>
@@ -38,12 +56,6 @@
   <ItemGroup>
     <PackageReference Include="Eto.Forms" Version="2.4.1" />
     <PackageReference Include="SharpZipLib" Version="1.2.0" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <Reference Include="Interop.IWshRuntimeLibrary">
-      <HintPath>..\..\..\..\..\..\..\Downloads\Interop.IWshRuntimeLibrary.dll</HintPath>
-    </Reference>
   </ItemGroup>
   
 </Project>
