@@ -123,7 +123,9 @@ namespace PulsarcInstaller.Util
 
             string zipFilePath = Path.ChangeExtension(tempFilePath, ".zip");
 
-            for (int i = 0; i < 5; i++)
+            // Try a couple times to copy the folder.
+            const int MAX_TRIES = 5;
+            for (int i = 0; i < MAX_TRIES; i++)
             {
                 try
                 {
@@ -132,14 +134,17 @@ namespace PulsarcInstaller.Util
                 }
                 catch
                 {
-                    if (i <= 4)
+                    // Don't give up until MAX_TRIES is reached
+                    if (i <= MAX_TRIES - 1)
                     {
                         MessageBox.Show("There was a problem during installation.\nPlease try again.",
                             "Installation Error",
                             MessageBoxButtons.OK,
                             MessageBoxType.Information);
 
-                        goto DeleteFiles;
+                        DeleteExtraFiles(tempFilePath, zipFilePath);
+                        InstallationComplete = true;
+                        return;
                     }
                 }
             }
@@ -187,11 +192,7 @@ namespace PulsarcInstaller.Util
                 Shortcut.CreateOnWindows(installPath);
             // TODO: Linux/Max desktop shortcuts.
 
-            // Try to delete the files
-            DeleteFiles:
-            Thread.Sleep(2000);
-            try { File.Delete(zipFilePath); } catch { try { File.Delete(zipFilePath); } catch { } }
-            try { File.Delete(tempFilePath); } catch { try { File.Delete(tempFilePath); } catch { } }
+            DeleteExtraFiles(tempFilePath, zipFilePath);
 
             InstallationComplete = true;
 
@@ -246,6 +247,32 @@ namespace PulsarcInstaller.Util
 
                     return true;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Deletes the extra files created during the installation process.
+        /// </summary>
+        /// <param name="tempFilePath"></param>
+        /// <param name="zipFilePath"></param>
+        private void DeleteExtraFiles(in string tempFilePath, in string zipFilePath)
+        {
+            // Give everything a break
+            Thread.Sleep(2000);
+
+            // Try to delete the files, if it failed once, try again before giving up.
+            try { File.Delete(zipFilePath); }
+            catch
+            { 
+                try { File.Delete(zipFilePath); }
+                catch { }
+            }
+
+            try { File.Delete(tempFilePath); }
+            catch
+            {
+                try { File.Delete(tempFilePath); }
+                catch { }
             }
         }
         #endregion
