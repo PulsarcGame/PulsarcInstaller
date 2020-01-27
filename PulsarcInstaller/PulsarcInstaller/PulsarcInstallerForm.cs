@@ -142,6 +142,8 @@ namespace PulsarcInstaller
         #region Installation Methods
         private async void StartInstallationProcess()
         {
+            // Display a message letting the user know Pulsarc is already installed
+            // TODO: Offer to overwrite with the newest version.
             if (ComputerInfo.PulsarcDirectoryExistsIn(installPath))
             {
                 ShowAlreadyInstalledMessage();

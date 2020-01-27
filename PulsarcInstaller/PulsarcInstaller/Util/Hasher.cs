@@ -18,11 +18,14 @@ namespace PulsarcInstaller.Util
             switch (algorithm)
             {
                 case HashType.MD5:
-                    return MakeHashString(MD5.Create().ComputeHash(new FileStream(filePath, FileMode.Open)));
+                    return MakeHashString(MD5.Create().ComputeHash(
+                        new FileStream(filePath, FileMode.Open)));
                 case HashType.SHA1:
-                    return MakeHashString(SHA1.Create().ComputeHash(new FileStream(filePath, FileMode.Open)));
+                    return MakeHashString(SHA1.Create().ComputeHash(
+                        new FileStream(filePath, FileMode.Open)));
                 case HashType.SHA512:
-                    return MakeHashString(SHA512.Create().ComputeHash(new FileStream(filePath, FileMode.Open)));
+                    return MakeHashString(SHA512.Create().ComputeHash(
+                        new FileStream(filePath, FileMode.Open)));
                 default:
                     return "";
             }

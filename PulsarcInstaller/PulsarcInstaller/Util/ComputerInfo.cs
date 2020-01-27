@@ -74,9 +74,7 @@ namespace PulsarcInstaller.Util
         /// <param name="pathToCheck">The path to check for Pulsarc.</param>
         /// <returns></returns>
         public static bool PulsarcDirectoryExistsIn(string pathToCheck)
-        {
-            return File.Exists($"{pathToCheck}/Pulsarc{ExecutableExtension}");
-        }
+            => File.Exists($"{pathToCheck}/Pulsarc{ExecutableExtension}");
 
         /// <summary>
         /// Determine whether or not the Pulsarc Directory Exists.
@@ -89,14 +87,15 @@ namespace PulsarcInstaller.Util
         {
             string assemblyPath = GetPathToAssembly();
 
-            // If the path we're in has only one or two "/" it means we're definitely not in the Pulsarc directory.
+            // If the path we're in has only one or two "/" we're not in the Pulsarc directory.
             // Windows: "[X]:/.../Pulsarc/[.dllFolder]
             // Mac: "/.../Pulsarc/[.dllFolder]
             // Linux: TOFO (To figure out)
             if (assemblyPath.Count(c => c == '/') <= 2)
                 return false;
 
-            // If we don't see the Pulsarc executable in the folder above us, we're probably not in the right place.
+            // If we don't see the Pulsarc executable in the folder above us,
+            // we're probably not in the right place.
             int indexOfLastSlash = assemblyPath.LastIndexOf('/');
             string rootAppFolder = assemblyPath.Substring(0, indexOfLastSlash);
 
@@ -108,10 +107,8 @@ namespace PulsarcInstaller.Util
         /// </summary>
         /// <returns></returns>
         private static string GetPathToAssembly()
-        {
-            return Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)
-                // Change windows "\" to "/" for easier usage.
+            => Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)
+                // Change windows' "\" to "/" for consistent format.
                 .Replace("\\", "/");
-        }
     }
 }

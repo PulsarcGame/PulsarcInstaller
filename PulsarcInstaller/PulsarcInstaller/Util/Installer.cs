@@ -5,7 +5,7 @@ using System;
 using System.ComponentModel;
 using System.IO;
 using System.Threading;
-using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace PulsarcInstaller.Util
 {
@@ -17,7 +17,7 @@ namespace PulsarcInstaller.Util
         // The path to install Pulsarc in.
         private string installPath;
 
-        // Parent control
+        // Parent control, used for DownloadProgressDialog
         private Control parentControl;
 
         public bool InstallationComplete { get; private set; } = false;
@@ -75,6 +75,7 @@ namespace PulsarcInstaller.Util
             DialogResult result = DialogResult.None;
             string tempFilePath = "";
 
+            // Download Pulsarc using DownloadProgressDialog
             using (var progressForm = new DownloadProgressDialog(install.DownloadUri, install.MD5))
             {
                 tempFilePath = progressForm.TempFilePath;
@@ -87,17 +88,27 @@ namespace PulsarcInstaller.Util
 
             // If the download was aborted, let the user know.
             else if (result == DialogResult.Abort)
+            {
                 MessageBox.Show("The download was cancelled",
                     "Download Cancelled",
                     MessageBoxButtons.OK,
                     MessageBoxType.Information);
 
+                // If this isn't set to true the program won't close
+                InstallationComplete = true;
+            }
+
             // If an error happened during downloading, let the user know.
             else
+            {
                 MessageBox.Show("There was a problem during downloading.\nPlease try again.",
                     "Download Error",
                     MessageBoxButtons.OK,
                     MessageBoxType.Information);
+
+                // If this isn't set to true the program won't close.
+                InstallationComplete = true;
+            }
         }
 
         private void InstallPulsarc(string tempFilePath, string installPath, string launchArgs = "")
@@ -163,7 +174,10 @@ namespace PulsarcInstaller.Util
                         StreamUtils.Copy(zipStream, output, buffer);
 
                         if (ShouldHideFile(entry.Name))
-                            File.SetAttributes(newPath, File.GetAttributes(newPath) | FileAttributes.Hidden);
+                        {
+                            File.SetAttributes(newPath,
+                                File.GetAttributes(newPath) | FileAttributes.Hidden);
+                        }
                     }
                 }
             }
@@ -173,12 +187,24 @@ namespace PulsarcInstaller.Util
                 Shortcut.CreateOnWindows(installPath);
             // TODO: Linux/Max desktop shortcuts.
 
+            // Try to delete the files
             DeleteFiles:
             Thread.Sleep(2000);
             try { File.Delete(zipFilePath); } catch { try { File.Delete(zipFilePath); } catch { } }
             try { File.Delete(tempFilePath); } catch { try { File.Delete(tempFilePath); } catch { } }
 
             InstallationComplete = true;
+
+            // Whether or not the provided file should be hidden.
+            bool ShouldHideFile(in string name)
+            {
+                List<string> hiddenFileTypes = new List<string>()
+                    { ".dll", ".so", ".dylib", ".config", ".json", };
+
+                int index = name.LastIndexOf('.');
+
+                return hiddenFileTypes.Contains(name.Substring(index));
+            }
 
             // Whether or not an entry is needed for this installation.
             // TODO: Clean the .zip files before uploading rather than having the installer do it.
@@ -220,17 +246,6 @@ namespace PulsarcInstaller.Util
 
                     return true;
                 }
-            }
-
-            bool ShouldHideFile(in string name)
-            {
-                string[] hiddenFileTypes = { ".dll", ".so", ".dylib", ".config", ".json", };
-
-                foreach (string fileType in hiddenFileTypes)
-                    if (name.Contains(fileType))
-                        return true;
-
-                return false;
             }
         }
         #endregion

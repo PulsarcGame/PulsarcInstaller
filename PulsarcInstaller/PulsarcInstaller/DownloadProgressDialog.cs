@@ -1,5 +1,4 @@
-﻿using Eto.IO;
-using Eto.Forms;
+﻿using Eto.Forms;
 using Eto.Drawing;
 using System;
 using System.Net;
@@ -105,8 +104,10 @@ namespace PulsarcInstaller
         private void SetUpClientAndWorker()
         {
             webClient = new WebClient();
-            webClient.DownloadProgressChanged += new DownloadProgressChangedEventHandler(WC_DownloadProgressChanged);
-            webClient.DownloadFileCompleted += new AsyncCompletedEventHandler(WC_DownloadFileCompleted);
+            webClient.DownloadProgressChanged +=
+                new DownloadProgressChangedEventHandler(WC_DownloadProgressChanged);
+            webClient.DownloadFileCompleted +=
+                new AsyncCompletedEventHandler(WC_DownloadFileCompleted);
 
             bgWorker = new BackgroundWorker();
             bgWorker.WorkerSupportsCancellation = true;

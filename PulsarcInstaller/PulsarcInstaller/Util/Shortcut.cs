@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using IWshRuntimeLibrary;
+﻿using IWshRuntimeLibrary;
 
 namespace PulsarcInstaller.Util
 {
@@ -13,7 +10,8 @@ namespace PulsarcInstaller.Util
             object shDesktop = "Desktop";
             WshShell shell = new WshShell();
             
-            string shortcutAddress = (string)shell.SpecialFolders.Item(ref shDesktop) + @"\Pulsarc.lnk";
+            string shortcutAddress = (string)shell.SpecialFolders.Item(ref shDesktop)
+                + @"\Pulsarc.lnk";
             IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutAddress);
             shortcut.TargetPath = path + @"\Pulsarc.exe";
             shortcut.WorkingDirectory = path;
